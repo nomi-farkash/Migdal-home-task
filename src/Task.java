@@ -44,12 +44,14 @@ public class Task {
         this.status = status;
     }
 
+    //this is convert the text to json format
     public String toJson() {
         return String.format(
                 "{\"id\":%d,\"title\":\"%s\",\"description\":\"%s\",\"status\":\"%s\"}",
                 id, escape(title), escape(description), status);
     }
 
+    //this is convert the json to text format
     public static Task fromJson(String json) {
         json = json.trim()
                 .replace("{", "")
@@ -86,10 +88,7 @@ public class Task {
         return id == task.id;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
-    }
+    //changes quotation marks
     private static String escape(String s) {
         return s.replace("\"", "\\\"");
     }

@@ -4,11 +4,13 @@ import java.util.*;
 
 public final class TaskRepository {
     private final File file;
+    //create file with end: .json
     public TaskRepository(String path) {
         if (!path.toLowerCase().endsWith(".json")) path += ".json";
         this.file = new File(path);
         initialized();
     }
+    //copy all the tasks to a list and if there is same id it will throw an error, then add the task to the json file by atomic(by temporary file)
     public synchronized void add(Task task) {
         List<Task> allTasks = readAll();
         if (allTasks.stream().anyMatch(t -> t.getId() == task.getId()))
@@ -16,15 +18,16 @@ public final class TaskRepository {
         allTasks.add(task);
         writeToTempFile(allTasks);
     }
+    //get a specific task by id
     public synchronized Task getById(int id) {
         for (Task t : readAll()) if (t.getId() == id) return t;
         return null;
     }
-
+    // get all the tasks
     public synchronized List<Task> listAll() {
         return readAll();
     }
-
+    //at first copy all the tasks to a list , then search the specific task in the list and if found it updates the list and finally updates the json by atomic
     public synchronized void update(Task task) {
         List<Task> allTasks = readAll();
         boolean found = false;
@@ -38,12 +41,14 @@ public final class TaskRepository {
         if (!found) throw new NoSuchElementException("Task id " + task.getId() + " not found can't update");
         writeToTempFile(allTasks);
     }
+    //at first copy all the tasks to a list , then search the specific task in the list and if found it deletes the list and finally updates the json by atomic
     public synchronized void delete(int id) {
         List<Task> all = readAll();
         boolean removed = all.removeIf(t -> t.getId() == id);
         if (!removed) throw new NoSuchElementException("Task id " + id + " not found can't delete");
         writeToTempFile(all);
     }
+    //initial file with json format
     private void initialized() {
         try {
             if (!file.exists()) {
@@ -57,7 +62,7 @@ public final class TaskRepository {
             throw new UncheckedIOException(e);
         }
     }
-
+   //read all the file
     private List<Task> readAll() {
         try {
             String json = readString(file);
@@ -66,7 +71,7 @@ public final class TaskRepository {
             throw new UncheckedIOException(e);
         }
     }
-
+   //write to file by atomic way for ensure everything will be written
     private void writeToTempFile(List<Task> tasks) {
         File tmp = new File(file.getParentFile(), file.getName() + ".tmp");
         try (Writer w = new OutputStreamWriter(new FileOutputStream(tmp), StandardCharsets.UTF_8)) {
@@ -86,7 +91,7 @@ public final class TaskRepository {
             tmp.delete();
         }
     }
-
+    //read all the file and return it as a UTF_8 string
     private static String readString(File f) throws IOException {
         try (InputStream in = new FileInputStream(f)) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -96,7 +101,7 @@ public final class TaskRepository {
             return out.toString(String.valueOf(StandardCharsets.UTF_8)).trim();
         }
     }
-
+    //split json file content to objects
     private static List<Task> parseArray(String jsonArray) {
         List<Task> out = new ArrayList<>();
         String s = jsonArray == null ? "" : jsonArray.trim();
@@ -126,6 +131,7 @@ public final class TaskRepository {
         return out;
     }
 
+    //copy file content to another file
     private static void copyFile(File src, File dst) throws IOException {
         try (InputStream in = new FileInputStream(src);
              OutputStream out = new FileOutputStream(dst)) {
